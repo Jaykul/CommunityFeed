@@ -15,16 +15,14 @@ function Update-FeedList {
     )
 
     $feeds = Import-Csv $FeedList
+    ## Allow Tags to be a comma-separated value of it's own
+    foreach($feed in $feeds) {
+        $feed.Tags = $feed.Tags -split "\s*,\s*"
+    }
 
     Push-Location $Path -ErrorAction Stop
-    Write-Debug 'Create index file'
 
-    Set-Content index.md @"
-# PowerShell UserGroup Links
-
-"@  -Encoding UTF8
-
-    $feeds | Update-Feed | Add-Content -Path index.md -Encoding UTF8
+    $feeds | Update-Feed
 
     Pop-Location
 }

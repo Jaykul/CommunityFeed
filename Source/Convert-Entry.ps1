@@ -4,6 +4,8 @@ function Convert-Entry {
         [Parameter(Mandatory)]
         [string]$GroupName,
 
+        [string[]]$Tags,
+
         [ValidateScript({
             if($_.name -ne "entry") { throw "The node isn't an entry" }
             if(!$_.title) { throw "The entry doesn't have a title" }
@@ -16,31 +18,23 @@ function Convert-Entry {
         [System.Xml.XmlElement]$Entry
     )
     begin {
-        $LastAuthor = $null
-        # Create the folder if it's missing, but don't remove old entries
-        if(!(Test-Path $GroupName -PathType Container)) {
-            $GroupName = (ConvertTo-FileName $GroupName) -replace '\s+'
-            if(!(Test-Path $GroupName -PathType Container)) {
-                $null = New-Item -Path $GroupName -ItemType Directory
-            }
-        }
+        $GroupName = (ConvertTo-FileName $GroupName) -replace '\s+'
     }
 
     process {
         $Title = ConvertTo-FileName $Entry.title
-        $FilePath = (Join-Path $GroupName $Title) + ".md"
-
-        # Output markdown for the index page
-        if ($Entry.Author.Uri -ne $LastAuthor) {
-            $LastAuthor = $Entry.Author.Uri
-            "`n## [Videos by $($Entry.Author.name)]($($Entry.Author.uri))`n`n"
-        }
-        "- [$($Entry.title)]($($FilePath -replace '\\','/'))`n"
+        $Date = ([DateTime]$Entry.Published).ToString("yyyy-MM-dd")
+        $FilePath = $GroupName, $Date, $Title -join " " | ConvertTo-Filename
 
         $thumbnail = "![$($Entry.title)]($($Entry.group.thumbnail.url) `"$($Entry.title)`")"
 
-        Set-Content $FilePath @"
-### $($Entry.title)
+        Set-Content "$FilePath.md" @"
+---
+title: $($Entry.title)
+date: $Date
+tags: $($GroupName.ToLowerInvariant()), $($Tags -join ", ")
+author: $($Entry.Author.name) $($Entry.Author.uri)
+---
 
 [$thumbnail](https://www.youtube.com/watch?v=$($Entry.videoId))
 

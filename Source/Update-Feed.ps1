@@ -4,35 +4,16 @@ function Update-Feed {
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [string]$Type,
 
+        [string[]]$Tags,
+
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [string]$Name,
 
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [string]$Uri
     )
-    begin {
-        $LastType = $null
-    }
     process {
-        $Name = $Name -replace '"'
-        $GroupName = ConvertTo-FileName $Name
-
-        # Output markdown for the index page
-        if ($Type -ne $LastType) {
-            $LastType = $Type
-            "`n## $Type`n`n"
-        }
-        "- [$Name]($(ConvertTo-FileName $Name).md)`n"
-
-        # Create a new page
-        Set-Content "$GroupName.md" @"
-## $Name Videos
-
-"@ -Encoding UTF8
-
-        Invoke-RestMethod -uri $Uri |
-            Convert-Entry -Group $GroupName |
-            Add-Content "$GroupName.md" -Encoding UTF8
-
+        $Tags += $Type
+        Invoke-RestMethod -uri $Uri | Convert-Entry -Group ($Name -replace '"') -Tags $Tags
     }
 }

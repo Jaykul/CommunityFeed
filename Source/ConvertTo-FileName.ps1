@@ -9,6 +9,8 @@ function ConvertTo-FileName {
         $characters = [RegEx]::new("[$characters]", "Compiled")
     }
     process {
-        ($Name -replace $characters).TrimEnd(".") -replace '\s+','-'
+        # Strip invalid characters and trailing dots
+        # Normalize whitespace to dashes, and make sure there's only ever one dash
+        ($Name -replace $characters).TrimEnd(".") -replace '\s+','-' -replace '-+','-'
     }
 }
